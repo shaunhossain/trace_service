@@ -10,6 +10,9 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.LocationServices
 import com.shaunhossain.traceservice.R
+import com.shaunhossain.traceservice.repository.db_repository.TrackerDbRepository
+import com.shaunhossain.traceservice.room_db.tracker_db.TrackerModel
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,11 +20,19 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class LocationService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var locationClient: LocationClient
     private lateinit var serviceRestart: ServiceRestart
+
+    @Inject
+    lateinit var trackerDbRepository: TrackerDbRepository
+
+    @Inject
+    lateinit var trackerModel: TrackerModel
 
     companion object {
         const val ACTION_START = "ACTION_START"
@@ -51,8 +62,9 @@ class LocationService : Service() {
     }
 
     private fun start() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notification = NotificationCompat.Builder(this,"track_location")
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = NotificationCompat.Builder(this, "track_location")
             .setContentTitle("Tracking location ....")
             .setContentText("Location: null")
             .setSmallIcon(R.drawable.ic_launcher_background)
@@ -63,12 +75,15 @@ class LocationService : Service() {
                 val lat = location.latitude.toString()
                 val lon = location.longitude.toString()
                 val updateNotification = notification.setContentText("Location: ($lat,$lon)")
-                notificationManager.notify(1,updateNotification.build())
+                notificationManager.notify(1, updateNotification.build())
+                trackerModel = TrackerModel(latitude = location.latitude, longitude = location.longitude, gpx_time = location.time, count = 0)
+                trackerDbRepository.insertTrackLocation(trackerModel)
             }
             .launchIn(serviceScope)
 
-        startForeground(1,notification.build())
+        startForeground(1, notification.build())
     }
+
     private fun stop() {
         stopForeground(true)
         stopSelf()
