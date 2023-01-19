@@ -101,5 +101,6 @@ class LocationService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
+        this.unregisterReceiver(serviceRestart)
     }
 }
