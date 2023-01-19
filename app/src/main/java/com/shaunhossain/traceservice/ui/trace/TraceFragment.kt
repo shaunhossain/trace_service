@@ -11,7 +11,9 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.viewModels
 import com.shaunhossain.traceservice.databinding.FragmentTraceBinding
 import com.shaunhossain.traceservice.service.LocationService
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class TraceFragment : Fragment() {
 
     private var _binding: FragmentTraceBinding? = null
