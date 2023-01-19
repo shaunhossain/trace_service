@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".LocationApp"
@@ -21,7 +22,29 @@
         android:theme="@style/Theme.TraceService"
         tools:targetApi="31">
 
-        <service android:name=".service.LocationService" android:foregroundServiceType="location" />
+        <receiver android:name=".service.ServiceAutoBootRestart"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".service.ServiceRestart"
+            android:enabled="true"
+            android:exported="true"
+            android:foregroundServiceType="location"
+            android:process=":remote"
+            android:stopWithTask="false">
+            <intent-filter>
+                <action android:name="REFRESH_THIS" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".service.LocationService"
+            android:foregroundServiceType="location" />
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
