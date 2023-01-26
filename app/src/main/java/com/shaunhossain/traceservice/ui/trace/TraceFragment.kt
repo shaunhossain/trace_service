@@ -9,10 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.viewModels
+import androidx.work.*
 import com.shaunhossain.traceservice.databinding.FragmentTraceBinding
 import com.shaunhossain.traceservice.service.LocationService
 import com.shaunhossain.traceservice.service.ServiceRestart
+import com.shaunhossain.traceservice.trace_worker.TraceWorker
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class TraceFragment : Fragment() {
@@ -42,6 +45,23 @@ class TraceFragment : Fragment() {
             0
         )
 
+        //define constraints
+        val myConstraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val refreshConfigWork =
+            PeriodicWorkRequest.Builder(TraceWorker::class.java, 15, TimeUnit.MINUTES)
+                .setInitialDelay(10, TimeUnit.SECONDS)
+                .setConstraints(myConstraints)
+                .addTag("unique_work")
+                .build()
+
+
+        WorkManager.getInstance(requireContext()).enqueueUniquePeriodicWork(
+            "unique_work", ExistingPeriodicWorkPolicy.REPLACE, refreshConfigWork
+        )
+
         binding.startButton.setOnClickListener {
             Intent(requireContext(), LocationService::class.java).apply {
                 action = LocationService.ACTION_START
@@ -54,8 +74,6 @@ class TraceFragment : Fragment() {
             Intent(requireContext(), LocationService::class.java).apply {
                 action = LocationService.ACTION_STOP
                 context?.startService(this)
-                val serviceRestart = ServiceRestart()
-                activity?.unregisterReceiver(serviceRestart)
             }
         }
     }
