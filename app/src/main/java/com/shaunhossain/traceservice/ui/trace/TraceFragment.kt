@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.viewModels
 import com.shaunhossain.traceservice.databinding.FragmentTraceBinding
 import com.shaunhossain.traceservice.service.LocationService
+import com.shaunhossain.traceservice.service.ServiceRestart
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -53,6 +54,8 @@ class TraceFragment : Fragment() {
             Intent(requireContext(), LocationService::class.java).apply {
                 action = LocationService.ACTION_STOP
                 context?.startService(this)
+                val serviceRestart = ServiceRestart()
+                activity?.unregisterReceiver(serviceRestart)
             }
         }
     }

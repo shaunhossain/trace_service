@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.LocationServices
 import com.shaunhossain.traceservice.R
 import com.shaunhossain.traceservice.repository.db_repository.TrackerDbRepository
+import com.shaunhossain.traceservice.repository.trace_repository.TraceRepository
 import com.shaunhossain.traceservice.room_db.tracker_db.TrackerModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,9 @@ class LocationService : Service() {
 
     @Inject
     lateinit var trackerDbRepository: TrackerDbRepository
+
+    @Inject
+    lateinit var traceRepository: TraceRepository
 
     @Inject
     lateinit var trackerModel: TrackerModel
@@ -69,7 +73,7 @@ class LocationService : Service() {
             .setContentText("Location: null")
             .setSmallIcon(R.drawable.ic_launcher_background)
             .setOngoing(true)
-        locationClient.getLocationUpdates(100L)
+        locationClient.getLocationUpdates(30000L)
             .catch { e -> e.printStackTrace() }
             .onEach { location ->
                 val lat = location.latitude.toString()
@@ -78,6 +82,7 @@ class LocationService : Service() {
                 notificationManager.notify(1, updateNotification.build())
                 trackerModel = TrackerModel(latitude = location.latitude, longitude = location.longitude, gpx_time = location.time, count = 0)
                 trackerDbRepository.insertTrackLocation(trackerModel)
+                traceRepository.sendTraceDataRequest(location)
             }
             .launchIn(serviceScope)
 
