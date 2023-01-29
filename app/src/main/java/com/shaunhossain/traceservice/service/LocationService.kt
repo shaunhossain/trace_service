@@ -27,7 +27,6 @@ import javax.inject.Inject
 class LocationService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var locationClient: LocationClient
-    private lateinit var serviceRestart: ServiceRestart
 
     @Inject
     lateinit var trackerDbRepository: TrackerDbRepository
@@ -99,13 +98,10 @@ class LocationService : Service() {
         Log.d("serviceWarning", "service removed")
         val filter = IntentFilter()
         filter.addAction("REFRESH_THIS")
-        serviceRestart = ServiceRestart()
-        this.registerReceiver(serviceRestart, filter)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
-        this.unregisterReceiver(serviceRestart)
     }
 }
