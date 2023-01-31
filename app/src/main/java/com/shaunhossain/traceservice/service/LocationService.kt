@@ -13,14 +13,13 @@ import com.shaunhossain.traceservice.R
 import com.shaunhossain.traceservice.repository.db_repository.TrackerDbRepository
 import com.shaunhossain.traceservice.repository.trace_repository.TraceRepository
 import com.shaunhossain.traceservice.room_db.tracker_db.TrackerModel
+import com.shaunhossain.traceservice.utils.InternetChecker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -36,6 +35,9 @@ class LocationService : Service() {
 
     @Inject
     lateinit var trackerModel: TrackerModel
+
+    @Inject
+    lateinit var internetChecker: InternetChecker
 
     companion object {
         const val ACTION_START = "ACTION_START"
@@ -72,16 +74,27 @@ class LocationService : Service() {
             .setContentText("Location: null")
             .setSmallIcon(R.drawable.ic_launcher_background)
             .setOngoing(true)
-        locationClient.getLocationUpdates(30000L)
+        locationClient.getLocationUpdates(10000L)
             .catch { e -> e.printStackTrace() }
-            .onEach { location ->
+            .onEach{ location ->
                 val lat = location.latitude.toString()
                 val lon = location.longitude.toString()
                 val updateNotification = notification.setContentText("Location: ($lat,$lon)")
                 notificationManager.notify(1, updateNotification.build())
-                trackerModel = TrackerModel(latitude = location.latitude, longitude = location.longitude, gpx_time = location.time, count = 0)
-                trackerDbRepository.insertTrackLocation(trackerModel)
-                traceRepository.sendTraceDataRequest(location)
+
+
+                if (internetChecker.isNetworkConnected()) {
+                    traceRepository.sendTraceDataRequest(location)
+                } else {
+                    Log.d("ServiceException", "${location.latitude} % ${location.longitude}")
+                    trackerModel = TrackerModel(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        gpx_time = location.time,
+                        count = 0
+                    )
+                    trackerDbRepository.insertTrackLocation(trackerModel)
+                }
             }
             .launchIn(serviceScope)
 

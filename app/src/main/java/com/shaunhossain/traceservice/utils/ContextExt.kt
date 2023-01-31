@@ -23,6 +23,6 @@ fun Context.hasLocationPermission(): Boolean {
 
 @SuppressLint("SimpleDateFormat")
 fun formatDate(timestampInMillis: Long): String? {
-    val sdf = SimpleDateFormat("MM/dd/yyyy")
+    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     return sdf.format(Date(timestampInMillis))
 }
